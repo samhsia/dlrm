@@ -6,7 +6,7 @@
 #
 #WARNING: must have compiled PyTorch and caffe2
 
-dlrm_pt_bin="python dlrm_s_pytorch.py"
+dlrm_pt_bin="python3 dlrm_s_pytorch.py"
 
 ##### Directories: #####
 DATA_DIR="/data/terabyte"

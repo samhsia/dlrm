@@ -51,7 +51,7 @@ def _log_print(logger, *args, **kwargs):
 
 def config_logger(benchmark):
     "initiates mlperf logger"
-    mllog.config(filename=os.path.join(os.path.dirname(os.path.abspath(__file__)), f'{benchmark}.log'))
+    mllog.config(filename=os.path.join(os.path.dirname(os.path.abspath(__file__)),'{}.log'.format(benchmark)))
     _MLLOGGER.logger.propagate = False
 
 

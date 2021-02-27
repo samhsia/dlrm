@@ -4,13 +4,13 @@ RUN apt-get update && apt-get install -y \
   git \
   emacs \
   tmux \
-  python \
-  python-pip
+  python3 \
+  python3-pip
 
 # Upgrade pip (already installed)
-RUN pip install --upgrade pip
+RUN pip3 install --upgrade "pip < 21.0"
 
-RUN pip install \
+RUN pip3 install \
   future \
   numpy \
   onnx \

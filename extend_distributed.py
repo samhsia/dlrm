@@ -242,7 +242,6 @@ class All2All_ScatterList_Req(Function):
         myreq.tensor = None
         return (None, *grad_inputs)
 
-
 class All2All_ScatterList_Wait(Function):
     @staticmethod
     def forward(ctx, *output):
@@ -333,7 +332,6 @@ class All2All_Scatter_Req(Function):
         grad_inputs = grad_input.split(ctx.a2a_info.emb_dim, dim=1)
         myreq.tensor = None
         return (None, *grad_inputs)
-
 
 class All2All_Scatter_Wait(Function):
     @staticmethod

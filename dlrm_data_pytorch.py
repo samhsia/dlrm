@@ -1144,7 +1144,7 @@ def read_trace_from_file(file_path):
                 trace = list(map(lambda x: np.uint64(x), line.split(", ")))
             return trace
     except Exception:
-        print(f"ERROR: trace file '{file_path}' is not available.")
+        print("ERROR: trace file '{}' is not available.".format(file_path))
 
 
 def write_trace_to_file(file_path, trace):
