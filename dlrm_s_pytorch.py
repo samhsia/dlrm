@@ -99,10 +99,12 @@ from tricks.qr_embedding_bag import QREmbeddingBag
 
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=DeprecationWarning)
+    '''
     try:
         import onnx
     except ImportError as error:
         print("Unable to import onnx. ", error)
+    '''
 
 # from torchviz import make_dot
 # import torch.nn.functional as Functional
@@ -971,7 +973,7 @@ def run():
     parser.add_argument("--quantize-mlp-with-bit", type=int, default=32)
     parser.add_argument("--quantize-emb-with-bit", type=int, default=32)
     # onnx
-    parser.add_argument("--save-onnx", action="store_true", default=False)
+    # parser.add_argument("--save-onnx", action="store_true", default=False)
     # gpu
     parser.add_argument("--use-gpu", action="store_true", default=False)
     # distributed
@@ -1505,8 +1507,10 @@ def run():
                     previous_iteration_time = None
 
                 for j, inputBatch in enumerate(train_ld):
+                    '''
                     if j == 0 and args.save_onnx:
                         X_onnx, lS_o_onnx, lS_i_onnx, _, _, _ = unpack_batch(inputBatch)
+                    '''
 
                     if j < skip_upto_batch:
                         continue
@@ -1783,6 +1787,7 @@ def run():
             print(param.detach().cpu().numpy())
 
     # export the model in onnx
+    '''
     if args.save_onnx:
         """
         # workaround 1: tensor -> list
@@ -1861,6 +1866,7 @@ def run():
         dlrm_pytorch_onnx = onnx.load("dlrm_s_pytorch.onnx")
         # check the onnx model
         onnx.checker.check_model(dlrm_pytorch_onnx)
+    '''
     total_time_end = time_wrap(use_gpu)
 
 
