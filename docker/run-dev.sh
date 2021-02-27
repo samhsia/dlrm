@@ -1,7 +1,6 @@
 #!/bin/bash
 
-docker run \
-  --gpus all \
+nvidia-docker run \
   -v /home/schsia:/home/schsia:rw \
   -v /home/schsia/.cache:/home/schsia/.cache:ro \
   -v /group/brooks:/group/brooks:ro \
