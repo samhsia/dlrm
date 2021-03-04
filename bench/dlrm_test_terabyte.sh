@@ -22,9 +22,11 @@ model_arch="--arch-sparse-feature-size=$embedding_dim --arch-mlp-bot=$mlp_bot --
 data_type="dataset"
 dataset="terabyte"
 raw_data_file="$DATA_DIR/day"
+processed_data_file="$DATA_DIR/terabyte.processed.npz"
+
 sub_sample_rate=0.875
 max_ind=10000000
-data="--data-generation=$data_type --data-set=$dataset --raw-data-file=$raw_data_file --data-sub-sample-rate=$sub_sample_rate --max-ind-range=$max_ind"
+data="--data-generation=$data_type --data-set=$dataset --raw-data-file=$raw_data_file --processed-data-file=$processed_data_file --data-sub-sample-rate=$sub_sample_rate --max-ind-range=$max_ind --memory-map"
 
 loss=bce
 rounding=True
