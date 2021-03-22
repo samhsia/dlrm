@@ -1106,6 +1106,7 @@ def run():
         if args.save_indices:
             indices = []
             for j, inputBatch in enumerate(train_ld):
+                print("Batch {}/{}".format(j, len(train_ld)))
                 X, lS_o, lS_i, T, W, CBPP = unpack_batch(inputBatch)
                 indices.append(lS_i)
             indices = np.array(indices)
