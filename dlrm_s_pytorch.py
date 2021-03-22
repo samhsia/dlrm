@@ -1008,6 +1008,9 @@ def run():
     parser.add_argument("--lr-decay-start-step", type=int, default=0)
     parser.add_argument("--lr-num-decay-steps", type=int, default=0)
 
+    parser.add_argument("--save-indices", action="store_true", default=False)
+    parser.add_argument("--indices-file", type=str, default="")
+
     global args
     global nbatches
     global nbatches_test
@@ -1099,6 +1102,17 @@ def run():
             ln_emb = np.array(ln_emb)
         m_den = train_data.m_den
         ln_bot[0] = m_den
+
+        if args.save_indices:
+            indices = []
+            for j, inputBatch in enumerate(train_ld):
+                X, lS_o, lS_i, T, W, CBPP = unpack_batch(inputBatch)
+                indices.append(lS_i)
+            indices = np.array(indices)
+            with open(args.indices_file, 'wb') as f:
+                np.save(f, indices)
+            sys.exit()
+
     else:
         # input and target at random
         ln_emb = np.fromstring(args.arch_embedding_size, dtype=int, sep="-")
