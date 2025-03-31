@@ -303,6 +303,7 @@ class DLRM_Net(nn.Module):
         md_flag=False,
         md_threshold=200,
         weighted_pooling=None,
+        loss_function="bce"
     ):
         super(DLRM_Net, self).__init__()
 
@@ -323,6 +324,7 @@ class DLRM_Net(nn.Module):
             self.arch_interaction_itself = arch_interaction_itself
             self.sync_dense_params = sync_dense_params
             self.loss_threshold = loss_threshold
+            self.loss_function=loss_function
             if weighted_pooling is not None and weighted_pooling != "fixed":
                 self.weighted_pooling = "learned"
             else:
@@ -371,18 +373,18 @@ class DLRM_Net(nn.Module):
             self.quantize_bits = 32
 
             # specify the loss function
-            if args.loss_function == "mse":
+            if self.loss_function == "mse":
                 self.loss_fn = torch.nn.MSELoss(reduction="mean")
-            elif args.loss_function == "bce":
+            elif self.loss_function == "bce":
                 self.loss_fn = torch.nn.BCELoss(reduction="mean")
-            elif args.loss_function == "wbce":
+            elif self.loss_function == "wbce":
                 self.loss_ws = torch.tensor(
                     np.fromstring(args.loss_weights, dtype=float, sep="-")
                 )
                 self.loss_fn = torch.nn.BCELoss(reduction="none")
             else:
                 sys.exit(
-                    "ERROR: --loss-function=" + args.loss_function + " is not supported"
+                    "ERROR: --loss-function=" + self.loss_function + " is not supported"
                 )
 
     def apply_mlp(self, x, layers):
@@ -1017,6 +1019,11 @@ def run():
     global writer
     args = parser.parse_args()
 
+    if args.dataset_multiprocessing:
+        assert float(sys.version[:3]) > 3.7, "The dataset_multiprocessing " + \
+        "flag is susceptible to a bug in Python 3.7 and under. " + \
+        "https://github.com/facebookresearch/dlrm/issues/172"
+
     if args.mlperf_logging:
         mlperf_logger.log_event(key=mlperf_logger.constants.CACHE_CLEAR, value=True)
         mlperf_logger.log_start(
@@ -1036,6 +1043,10 @@ def run():
         if args.md_flag:
             sys.exit(
                 "ERROR: 4 and 8-bit quantization with mixed dimensions is not supported"
+            )
+        if args.use_gpu:
+            sys.exit(
+                "ERROR: 4 and 8-bit quantization on GPU is not supported"
             )
 
     ### some basic setup ###
@@ -1118,8 +1129,9 @@ def run():
         # input and target at random
         ln_emb = np.fromstring(args.arch_embedding_size, dtype=int, sep="-")
         m_den = ln_bot[0]
-        train_data, train_ld = dp.make_random_data_and_loader(args, ln_emb, m_den)
+        train_data, train_ld, test_data, test_ld = dp.make_random_data_and_loader(args, ln_emb, m_den)
         nbatches = args.num_batches if args.num_batches > 0 else len(train_ld)
+        nbatches_test = len(test_ld)
 
     args.ln_emb = ln_emb.tolist()
     if args.mlperf_logging:
@@ -1282,6 +1294,7 @@ def run():
         md_flag=args.md_flag,
         md_threshold=args.md_threshold,
         weighted_pooling=args.weighted_pooling,
+        loss_function=args.loss_function
     )
 
     # test prints
@@ -1461,9 +1474,6 @@ def run():
         if args.quantize_emb_with_bit != 32:
             dlrm.quantize_embedding(args.quantize_emb_with_bit)
             # print(dlrm)
-        assert (
-            args.data_generation == "dataset"
-        ), "currently only dataset loader provides testset"
 
     print("time/loss/accuracy (if enabled):")
 
@@ -1494,7 +1504,7 @@ def run():
 
     ext_dist.barrier()
     with torch.autograd.profiler.profile(
-        args.enable_profiling, use_gpu, record_shapes=True
+        args.enable_profiling, use_cuda=use_gpu, record_shapes=True
     ) as prof:
         if not args.inference_only:
             k = 0
@@ -1581,11 +1591,10 @@ def run():
 
                     # # print("res: ", S)
 
-                    # # print("j, train: BCE, shifted_BCE ", j, L, L_shifted)
+                    # # print("j, train: BCE ", j, L)
 
                     # mbs = T.shape[0]  # = args.mini_batch_size except maybe for last
                     # A = np.sum((np.round(S, 0) == T).astype(np.uint8))
-                    # A_shifted = np.sum((np.round(S_shifted, 0) == T).astype(np.uint8))
 
                     with record_function("DLRM backward"):
                         # scaled error gradient propagation
@@ -1615,7 +1624,7 @@ def run():
                     )
                     should_test = (
                         (args.test_freq > 0)
-                        and (args.data_generation == "dataset")
+                        and (args.data_generation in ["dataset", "random"])
                         and (((j + 1) % args.test_freq == 0) or (j + 1 == nbatches))
                     )
 
@@ -1687,6 +1696,7 @@ def run():
                             model_metrics_dict["epoch"] = k
                             model_metrics_dict["iter"] = j + 1
                             model_metrics_dict["train_loss"] = train_loss
+                            model_metrics_dict["total_loss"] = total_loss
                             model_metrics_dict[
                                 "opt_state_dict"
                             ] = optimizer.state_dict()
